@@ -9,6 +9,7 @@ import {
   Play,
   Calendar,
   Zap,
+  Pause,
 } from 'lucide-react';
 import { useStore } from '../store';
 import { formatDuration } from '../utils/skillLevels';
@@ -23,7 +24,7 @@ import {
 } from 'recharts';
 
 export const Dashboard: React.FC = () => {
-  const { plans, skills, stats, sessions, startTimer } = useStore();
+  const { plans, skills, stats, sessions, startTimer, stopTimer, isTimerRunning, currentTimerPlanId, currentTimerTaskId } = useStore();
 
   const totalPlans = plans.length;
   const activePlans = plans.filter((p) => {
@@ -74,12 +75,23 @@ export const Dashboard: React.FC = () => {
   const firstPlan = plans[0];
 
   const handleQuickStart = () => {
-    if (activePlan) {
-      startTimer(activePlan.id);
-    } else if (firstPlan) {
-      startTimer(firstPlan.id);
+    if (isTimerRunning) {
+      stopTimer();
+      return;
     }
+    // 优先找有技能关联的未完成任务，这样计时时能获得技能经验
+    const planToUse = activePlan || firstPlan;
+    if (!planToUse) return;
+    const incompleteTaskWithSkill = planToUse.tasks.find(
+      (t) => !t.completed && t.relatedSkillId
+    );
+    const incompleteTask = planToUse.tasks.find((t) => !t.completed);
+    const taskId = incompleteTaskWithSkill?.id || incompleteTask?.id;
+    startTimer(planToUse.id, taskId);
   };
+
+  const currentTimerPlan = plans.find((p) => p.id === currentTimerPlanId);
+  const currentTimerTask = currentTimerPlan?.tasks.find((t) => t.id === currentTimerTaskId);
 
   return (
     <div className="dashboard">
@@ -90,8 +102,20 @@ export const Dashboard: React.FC = () => {
         </div>
         {plans.length > 0 && (
           <button className="quick-start-btn" onClick={handleQuickStart}>
-            <Play size={18} />
-            开始学习
+            {isTimerRunning ? (
+              <>
+                <Pause size={18} />
+                停止计时
+                {currentTimerTask && (
+                  <span className="timer-task-name"> · {currentTimerTask.title}</span>
+                )}
+              </>
+            ) : (
+              <>
+                <Play size={18} />
+                开始学习
+              </>
+            )}
           </button>
         )}
       </div>

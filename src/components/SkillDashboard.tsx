@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../store';
-import { Target, Star, BookOpen, Code, Wrench, Hand, Zap, CheckCircle2, CheckSquare, FolderKanban, TrendingUp, ChevronDown, ChevronUp, Layers } from 'lucide-react';
+import { Target, Star, BookOpen, Code, Wrench, Hand, Zap, CheckCircle2, CheckSquare, FolderKanban, TrendingUp, ChevronDown, ChevronUp, Layers, ExternalLink } from 'lucide-react';
 import { getLevelInfo, getExpToNextLevel, isStuckAtBreakthrough, SKILL_LEVELS, BREAKTHROUGH_REQUIREMENTS } from '../utils/skillLevels';
 import { PROJECT_GOALS } from '../data/projectGoals';
 import { CAREER_PROJECTS } from '../data/careerProjects';
@@ -16,7 +16,11 @@ const SKILL_TYPE_INFO: Record<string, { label: string; icon: any; color: string 
 
 const ALL_PROJECTS = [...PROJECT_GOALS, ...CAREER_PROJECTS];
 
-export const SkillDashboard: React.FC = () => {
+interface SkillDashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const SkillDashboard: React.FC<SkillDashboardProps> = ({ onNavigate }) => {
   const { skills, plans, completedProjects, breakthroughSkill, masteredSkillNodes, toggleSkillNodeMastered } = useStore();
   const [selectedType, setSelectedType] = useState<string>('全部');
   const [sortBy, setSortBy] = useState<'name' | 'level' | 'exp' | 'difficulty'>('level');
@@ -327,6 +331,19 @@ export const SkillDashboard: React.FC = () => {
 
                               <div className="skill-stats-row">
                                 <span>总经验: {skill.totalExp} EXP</span>
+                                {(() => {
+                                  const relatedProjects = ALL_PROJECTS.filter((p) => p.skillId === skill.id);
+                                  if (relatedProjects.length === 0) return null;
+                                  return (
+                                    <button
+                                      className="btn-link"
+                                      onClick={() => onNavigate?.('projectGoals')}
+                                    >
+                                      <ExternalLink size={12} />
+                                      查看相关项目 ({relatedProjects.length})
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </div>
                           )}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { X, Plus, Clock, Trash2, Check } from 'lucide-react';
 import { SKILL_LEVELS } from '../utils/skillLevels';
+import Modal from './Modal';
 
 // 本地类型定义
 type Skill = {
@@ -31,15 +32,21 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
   const [newTaskDesc, setNewTaskDesc] = useState('');
   const [newTaskExp, setNewTaskExp] = useState(50);
   const [newTaskSkill, setNewTaskSkill] = useState('');
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>(
+    existingPlan?.priority || 'medium'
+  );
+  const [editingNoteTaskId, setEditingNoteTaskId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
 
   const handleSavePlan = () => {
     if (!title.trim()) return;
     
     if (existingPlan) {
-      updatePlan(existingPlan.id, { title, description });
+      updatePlan(existingPlan.id, { title, description, priority });
     } else {
-      addPlan({ title, description, tasks: [] });
+      addPlan({ title, description, tasks: [], priority });
     }
     onClose();
   };
@@ -53,12 +60,14 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
       completed: false,
       expReward: newTaskExp,
       relatedSkillId: newTaskSkill || undefined,
+      dueDate: newTaskDueDate || undefined,
     });
     
     setNewTaskTitle('');
     setNewTaskDesc('');
     setNewTaskExp(50);
     setNewTaskSkill('');
+    setNewTaskDueDate('');
     setShowTaskForm(false);
   };
 
@@ -78,26 +87,21 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
 
   if (!existingPlan && planId) {
     return (
-      <div className="modal-overlay">
-        <div className="modal">
-          <p>计划不存在</p>
-          <button onClick={onClose}>关闭</button>
-        </div>
-      </div>
+      <Modal isOpen onClose={onClose} title="提示" size="sm">
+        <p>计划不存在</p>
+      </Modal>
     );
   }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal plan-editor">
-        <div className="modal-header">
-          <h2>{existingPlan ? '编辑计划' : '新建计划'}</h2>
-          <button className="close-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="modal-body">
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={existingPlan ? '编辑计划' : '新建计划'}
+      size="lg"
+      className="plan-editor-modal"
+    >
+      <div className="plan-editor-body">
           <div className="form-group">
             <label>计划标题</label>
             <input
@@ -116,6 +120,15 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
               placeholder="描述你的学习目标..."
               rows={3}
             />
+          </div>
+
+          <div className="form-group">
+            <label>优先级</label>
+            <select value={priority} onChange={(e) => setPriority(e.target.value as any)}>
+              <option value="high">高优先级</option>
+              <option value="medium">中优先级</option>
+              <option value="low">低优先级</option>
+            </select>
           </div>
 
           {!existingPlan ? (
@@ -179,6 +192,14 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
                           ))}
                         </select>
                       </div>
+                      <div className="form-group">
+                        <label>截止日期</label>
+                        <input
+                          type="date"
+                          value={newTaskDueDate}
+                          onChange={(e) => setNewTaskDueDate(e.target.value)}
+                        />
+                      </div>
                     </div>
                     <div className="task-form-actions">
                       <button className="btn-secondary" onClick={() => setShowTaskForm(false)}>
@@ -214,6 +235,11 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
                           <div className="task-info">
                             <h4>{task.title}</h4>
                             {task.description && <p>{task.description}</p>}
+                            {task.notes && (
+                              <div className="task-notes">
+                                <span className="notes-label">笔记:</span> {task.notes}
+                              </div>
+                            )}
                             <div className="task-meta">
                               <span className="exp">+{task.expReward} EXP</span>
                               {relatedSkill && (
@@ -229,6 +255,21 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
                         </div>
                         <div className="task-actions">
                           <button
+                            className="note-btn"
+                            onClick={() => {
+                              if (editingNoteTaskId === task.id) {
+                                updateTask(existingPlan.id, task.id, { notes: noteDraft });
+                                setEditingNoteTaskId(null);
+                              } else {
+                                setEditingNoteTaskId(task.id);
+                                setNoteDraft(task.notes || '');
+                              }
+                            }}
+                            title="笔记"
+                          >
+                            {editingNoteTaskId === task.id ? <Check size={16} /> : '笔记'}
+                          </button>
+                          <button
                             className={`timer-btn ${isTimerActive ? 'active' : ''}`}
                             onClick={() => handleStartTimer(task.id)}
                             disabled={task.completed}
@@ -243,6 +284,16 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
                             <Trash2 size={16} />
                           </button>
                         </div>
+                        {editingNoteTaskId === task.id && (
+                          <div className="task-note-editor">
+                            <textarea
+                              value={noteDraft}
+                              onChange={(e) => setNoteDraft(e.target.value)}
+                              placeholder="记录学习笔记..."
+                              rows={3}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -258,7 +309,6 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ planId, onClose }) => {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

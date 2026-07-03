@@ -1,5 +1,6 @@
 import React, { useState, Suspense, lazy } from 'react';
 import './App.css';
+import './api-styles.css';
 import { Sidebar } from './components/Sidebar';
 import { FloatingTimer } from './components/FloatingTimer';
 
@@ -12,6 +13,7 @@ const SkillDashboard = lazy(() => import('./components/SkillDashboard').then(m =
 const CareerPage = lazy(() => import('./components/CareerPage').then(m => ({ default: m.CareerPage })));
 const AIRecommend = lazy(() => import('./components/AIRecommend').then(m => ({ default: m.AIRecommend })));
 const ProjectGoals = lazy(() => import('./components/ProjectGoals').then(m => ({ default: m.ProjectGoals })));
+const StudyReport = lazy(() => import('./components/StudyReport').then(m => ({ default: m.StudyReport })));
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -42,13 +44,15 @@ function App() {
       case 'calendar':
         return <CalendarView />;
       case 'skills':
-        return <SkillDashboard />;
+        return <SkillDashboard onNavigate={setCurrentPage} />;
       case 'careers':
-        return <CareerPage />;
+        return <CareerPage onNavigate={setCurrentPage} />;
       case 'projectGoals':
         return <ProjectGoals />;
       case 'ai':
-        return <AIRecommend />;
+        return <AIRecommend onNewPlan={handleNewPlan} />;
+      case 'report':
+        return <StudyReport />;
       default:
         return <Dashboard />;
     }

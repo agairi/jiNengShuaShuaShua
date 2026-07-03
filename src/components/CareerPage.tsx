@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, ChevronDown, ChevronUp, BookOpen, Target } from 'lucide-react';
 import { DEFAULT_CAREERS } from '../data/skillsAndCareers';
 import { getLevelInfo, SKILL_LEVELS } from '../utils/skillLevels';
 
-export const CareerPage: React.FC = () => {
+interface CareerPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const CareerPage: React.FC<CareerPageProps> = ({ onNavigate }) => {
   const { skills } = useStore();
   const [selectedCareer, setSelectedCareer] = useState<string | null>(null);
   const [expandedCareer, setExpandedCareer] = useState<string | null>(null);
@@ -124,6 +128,23 @@ export const CareerPage: React.FC = () => {
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="career-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => onNavigate?.('skills')}
+                    >
+                      <BookOpen size={14} />
+                      查看技能面板
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => onNavigate?.('projectGoals')}
+                    >
+                      <Target size={14} />
+                      查看项目目标
+                    </button>
                   </div>
                 </div>
               )}

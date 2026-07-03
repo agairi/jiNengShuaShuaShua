@@ -25,7 +25,7 @@ import {
 } from 'date-fns';
 
 export const CalendarView: React.FC = () => {
-  const { plans } = useStore();
+  const { plans, toggleTask, startTimer, stopTimer, isTimerRunning, currentTimerTaskId } = useStore();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
@@ -189,7 +189,10 @@ export const CalendarView: React.FC = () => {
                     key={idx}
                     className={`day-task-item ${item.task.completed ? 'completed' : ''}`}
                   >
-                    <span className="task-status-icon">
+                    <span
+                      className="task-status-icon clickable"
+                      onClick={() => toggleTask(item.plan.id, item.task.id)}
+                    >
                       {item.task.completed ? (
                         <CheckCircle2 size={16} color="#22c55e" />
                       ) : (
@@ -201,6 +204,22 @@ export const CalendarView: React.FC = () => {
                       <span className="task-plan-name">{item.plan.title}</span>
                     </div>
                     <span className="task-exp">+{item.task.expReward}</span>
+                    {!item.task.completed && (
+                      <button
+                        className="task-timer-btn"
+                        onClick={() => {
+                          if (isTimerRunning && currentTimerTaskId === item.task.id) {
+                            stopTimer();
+                          } else {
+                            if (isTimerRunning) stopTimer();
+                            startTimer(item.plan.id, item.task.id);
+                          }
+                        }}
+                      >
+                        <Clock size={12} />
+                        {isTimerRunning && currentTimerTaskId === item.task.id ? '停止' : '计时'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

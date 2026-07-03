@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { SKILLS_WITH_META } from '../data/skillsAndCareers';
 
 import { getSkillLevelWithBreakthrough, EXP_CONFIG, getStreakBonus } from '../utils/skillLevels';
+import { DEFAULT_ENABLED_SOURCES, type SearchSource } from '../utils/searchApi';
+import { DEFAULT_AI_CONFIG, type AiProviderConfig } from '../utils/localAiService';
 
 // 本地类型定义
 type Skill = {
@@ -33,6 +35,7 @@ type Task = {
   expReward: number;
   relatedSkillId?: string;
   dueDate?: string;
+  notes?: string;
 };
 
 type StudyPlan = {
@@ -80,6 +83,17 @@ type AppState = {
   completedProjects: Record<string, { completedAt: string; expReward: number }>;
   // 技能树知识点掌握状态：skillId -> Set of mastered node ids
   masteredSkillNodes: Record<string, string[]>;
+  // API搜索配置
+  apiSettings: {
+    serpApiKey?: string;
+    googleApiKey?: string;
+    googleCx?: string;
+    customApiUrl?: string;
+    enabledSources: SearchSource[];
+    webSearchEnabled: boolean;
+  };
+  // 本地AI配置
+  aiConfig: AiProviderConfig;
 };
 
 interface AppStore extends AppState {
@@ -111,6 +125,17 @@ interface AppStore extends AppState {
 
   // Session actions
   addSession: (session: Omit<StudySession, 'id'>) => void;
+
+  // API settings actions
+  updateApiSettings: (updates: Partial<AppState['apiSettings']>) => void;
+  toggleSearchSource: (source: SearchSource) => void;
+  toggleWebSearch: () => void;
+  // AI config actions
+  updateAiConfig: (updates: Partial<AiProviderConfig>) => void;
+
+  // Data import/export
+  exportData: () => string;
+  importData: (json: string) => boolean;
 }
 
 const initialSkills: Skill[] = SKILLS_WITH_META.map(skill => ({
@@ -140,6 +165,11 @@ export const useStore = create<AppStore>()(
       currentTimerTaskId: null,
       completedProjects: {},
       masteredSkillNodes: {},
+      apiSettings: {
+        enabledSources: DEFAULT_ENABLED_SOURCES,
+        webSearchEnabled: false,
+      },
+      aiConfig: { ...DEFAULT_AI_CONFIG },
 
       addPlan: (plan) => {
         const id = uuidv4();
@@ -494,6 +524,76 @@ export const useStore = create<AppStore>()(
         set((state) => ({
           sessions: [...state.sessions, { ...session, id: uuidv4() }],
         }));
+      },
+
+      updateApiSettings: (updates) => {
+        set((state) => ({
+          apiSettings: { ...state.apiSettings, ...updates },
+        }));
+      },
+
+      toggleSearchSource: (source) => {
+        set((state) => {
+          const sources = state.apiSettings.enabledSources.includes(source)
+            ? state.apiSettings.enabledSources.filter((s) => s !== source)
+            : [...state.apiSettings.enabledSources, source];
+          return { apiSettings: { ...state.apiSettings, enabledSources: sources } };
+        });
+      },
+
+      toggleWebSearch: () => {
+        set((state) => ({
+          apiSettings: { ...state.apiSettings, webSearchEnabled: !state.apiSettings.webSearchEnabled },
+        }));
+      },
+
+      updateAiConfig: (updates) => {
+        set((state) => ({
+          aiConfig: { ...state.aiConfig, ...updates },
+        }));
+      },
+
+      exportData: () => {
+        const state = get();
+        const exportObj = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          plans: state.plans,
+          skills: state.skills,
+          sessions: state.sessions,
+          stats: state.stats,
+          completedProjects: state.completedProjects,
+          masteredSkillNodes: state.masteredSkillNodes,
+          apiSettings: state.apiSettings,
+          aiConfig: state.aiConfig,
+        };
+        return JSON.stringify(exportObj, null, 2);
+      },
+
+      importData: (json) => {
+        try {
+          const data = JSON.parse(json);
+          if (!data.plans || !Array.isArray(data.plans)) return false;
+          set({
+            plans: data.plans || [],
+            skills: data.skills || initialSkills,
+            sessions: data.sessions || [],
+            stats: data.stats || {
+              totalStudyTime: 0,
+              totalTasks: 0,
+              completedTasks: 0,
+              currentStreak: 0,
+              longestStreak: 0,
+            },
+            completedProjects: data.completedProjects || {},
+            masteredSkillNodes: data.masteredSkillNodes || {},
+            apiSettings: data.apiSettings || { enabledSources: DEFAULT_ENABLED_SOURCES, webSearchEnabled: false },
+            aiConfig: data.aiConfig || { ...DEFAULT_AI_CONFIG },
+          });
+          return true;
+        } catch {
+          return false;
+        }
       },
     }),
     {

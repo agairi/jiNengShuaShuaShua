@@ -31,7 +31,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; icon: any; color: string 
 };
 
 export const PlansPage: React.FC<PlansPageProps> = ({ onEditPlan, onNewPlan }) => {
-  const { plans, deletePlan, toggleTask } = useStore();
+  const { plans, deletePlan, toggleTask, startTimer, stopTimer, isTimerRunning, currentTimerTaskId } = useStore();
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('全部');
 
@@ -249,6 +249,23 @@ export const PlansPage: React.FC<PlansPageProps> = ({ onEditPlan, onNewPlan }) =
                                 <Clock size={10} />
                                 {new Date(task.dueDate).toLocaleDateString('zh-CN')}
                               </span>
+                            )}
+                            {!task.completed && (
+                              <button
+                                className="task-timer-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isTimerRunning && currentTimerTaskId === task.id) {
+                                    stopTimer();
+                                  } else {
+                                    if (isTimerRunning) stopTimer();
+                                    startTimer(plan.id, task.id);
+                                  }
+                                }}
+                              >
+                                <Clock size={12} />
+                                {isTimerRunning && currentTimerTaskId === task.id ? '停止' : '计时'}
+                              </button>
                             )}
                           </div>
                         ))}
