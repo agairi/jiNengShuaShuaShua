@@ -13,8 +13,8 @@ type TestStatus = 'idle' | 'testing' | 'success' | 'fail';
 
 const PROVIDER_INFO: Record<AiProvider, { label: string; desc: string; badge: string }> = {
   builtin: { label: '内置引擎', desc: '免费、无需安装、智能规则匹配', badge: 'free' },
-  ollama: { label: 'Ollama', desc: '本地大模型、免费、需安装Ollama', badge: 'free' },
-  'openai-compatible': { label: 'OpenAI兼容', desc: '支持LM Studio/LocalAI等', badge: 'free' },
+  ollama: { label: 'Ollama 本地', desc: '本地大模型、免费、需安装Ollama', badge: 'free' },
+  'openai-compatible': { label: '在线/兼容API', desc: '支持DeepSeek/硅基流动/LM Studio等', badge: 'api' },
 };
 
 export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClose }) => {
@@ -55,7 +55,7 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={<><Cpu size={20} /> 本地AI设置</>}
+      title={<><Cpu size={20} /> AI 引擎设置</>}
       size="md"
       footer={<button className="btn-primary" onClick={onClose}>完成</button>}
     >
@@ -65,8 +65,8 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
               <div className="setting-info">
                 <Cpu size={20} className="setting-icon" />
                 <div>
-                  <h3>本地AI助手</h3>
-                  <p>开启后可使用本地AI提供智能学习建议</p>
+                  <h3>AI 助手</h3>
+                  <p>开启后可使用 AI 提供智能学习建议和讲解</p>
                 </div>
               </div>
               <div className={`toggle-switch ${aiConfig.enabled ? 'on' : ''}`} onClick={() => updateAiConfig({ enabled: !aiConfig.enabled })}>
@@ -164,36 +164,40 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
           {/* OpenAI兼容 配置 */}
           {aiConfig.provider === 'openai-compatible' && (
             <div className="settings-section">
-              <h4 className="section-title">OpenAI兼容 配置</h4>
+              <h4 className="section-title">在线/兼容API 配置</h4>
               <div className="source-config">
                 <div className="config-field">
                   <label>Base URL</label>
                   <input
                     type="text"
-                    placeholder="http://localhost:1234/v1"
+                    placeholder="https://api.deepseek.com/v1"
                     value={aiConfig.openaiBaseUrl}
                     onChange={(e) => updateAiConfig({ openaiBaseUrl: e.target.value })}
                   />
-                  <span className="help-text">LM Studio 默认 http://localhost:1234/v1</span>
+                  <span className="help-text">
+                    DeepSeek: https://api.deepseek.com/v1 &nbsp;|&nbsp;
+                    硅基流动: https://api.siliconflow.cn/v1
+                  </span>
                 </div>
                 <div className="config-field">
                   <label>API Key</label>
                   <input
                     type="password"
-                    placeholder="可选，部分服务不需要"
+                    placeholder="sk-xxxxxxxxxxxxxxxx"
                     value={aiConfig.openaiApiKey}
                     onChange={(e) => updateAiConfig({ openaiApiKey: e.target.value })}
                   />
-                  <span className="help-text">部分本地服务无需填写API Key</span>
+                  <span className="help-text">在对应平台的设置中获取 API Key</span>
                 </div>
                 <div className="config-field">
                   <label>模型名称</label>
                   <input
                     type="text"
-                    placeholder="如 Qwen2.5-7B"
+                    placeholder="deepseek-chat / gpt-3.5-turbo / qwen2.5-7b-instruct"
                     value={aiConfig.openaiModel}
                     onChange={(e) => updateAiConfig({ openaiModel: e.target.value })}
                   />
+                  <span className="help-text">根据所选平台填写对应的模型名</span>
                 </div>
                 <div className="config-field">
                   <div className="input-with-action" style={{ justifyContent: 'flex-start', gap: '8px' }}>
@@ -221,7 +225,22 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                 <div className="tutorial-step">
                   <div className="step-num">1</div>
                   <div className="step-content">
-                    <h5>方案一：Ollama（推荐）</h5>
+                    <h5>方案一：在线API（推荐，效果最好）</h5>
+                    <ol>
+                      <li>注册 DeepSeek: <a href="https://www.deepseek.com/" target="_blank" rel="noopener noreferrer">deepseek.com</a>（新用户送额度）</li>
+                      <li>或注册 硅基流动: <a href="https://siliconflow.cn/" target="_blank" rel="noopener noreferrer">siliconflow.cn</a>（国产平台，模型多）</li>
+                      <li>在平台设置中获取 API Key</li>
+                      <li>选择"在线/兼容API"模式，填入 Base URL 和 API Key</li>
+                      <li>模型名：DeepSeek填 <code>deepseek-chat</code>，硅基流动填对应模型名</li>
+                      <li>点击"测试连接"验证配置是否正确</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <div className="tutorial-step">
+                  <div className="step-num">2</div>
+                  <div className="step-content">
+                    <h5>方案二：Ollama 本地（完全免费）</h5>
                     <ol>
                       <li>下载安装 Ollama: <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">ollama.com/download</a></li>
                       <li>安装后打开终端，运行: <code>ollama pull qwen2.5:7b</code>（推荐中文能力强的模型）</li>
@@ -233,26 +252,27 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                 </div>
 
                 <div className="tutorial-step">
-                  <div className="step-num">2</div>
+                  <div className="step-num">3</div>
                   <div className="step-content">
-                    <h5>方案二：LM Studio</h5>
+                    <h5>方案三：LM Studio（图形界面）</h5>
                     <ol>
                       <li>下载安装 LM Studio: <a href="https://lmstudio.ai/" target="_blank" rel="noopener noreferrer">lmstudio.ai</a></li>
                       <li>在LM Studio中搜索并下载一个模型（如 Qwen2.5-7B）</li>
                       <li>点击"Start Server"，默认端口1234</li>
-                      <li>选择"OpenAI兼容"模式，填入 <code>http://localhost:1234/v1</code></li>
+                      <li>选择"在线/兼容API"模式，填入 <code>http://localhost:1234/v1</code></li>
                     </ol>
                   </div>
                 </div>
 
                 <div className="tutorial-step">
-                  <div className="step-num">3</div>
+                  <div className="step-num">4</div>
                   <div className="step-content">
                     <h5>常见问题</h5>
                     <ul>
-                      <li>连接失败？检查Ollama/LM Studio是否在运行</li>
-                      <li>回复慢？7B模型需要8GB内存，可以用更小的模型如 <code>qwen2.5:3b</code></li>
-                      <li>中文效果差？推荐用 <code>qwen2.5</code> 或 <code>glm4</code> 系列模型</li>
+                      <li><strong>混合模式是什么？</strong>简单问题用内置引擎（快），复杂问题调AI（准）</li>
+                      <li><strong>在线API收费吗？</strong>DeepSeek/硅基流动新用户有免费额度，超出后按量付费</li>
+                      <li><strong>本地模型慢？</strong>7B模型需要8GB内存，可以用更小的模型如 <code>qwen2.5:3b</code></li>
+                      <li><strong>中文效果差？</strong>推荐用 <code>qwen2.5</code> 或 <code>glm4</code> 系列模型</li>
                     </ul>
                   </div>
                 </div>

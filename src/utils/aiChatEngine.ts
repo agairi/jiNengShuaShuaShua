@@ -12,6 +12,7 @@ import {
   getRecommendations,
   type UserSkillContext,
 } from './smartSearch';
+import { generateWithAi, type AiProviderConfig } from './localAiService';
 
 // ============ 导出类型 ============
 
@@ -980,4 +981,64 @@ export function getQuickQuestions(context: UserContext): string[] {
     questions.push(`学${top.name}需要什么基础`);
   }
   return questions.slice(0, 4);
+}
+
+// ============ 混合模式 AI 对话 ============
+
+const AI_ENHANCED_KEYWORDS = [
+  '讲解', '解释', '详细', '原理', '深入', '代码', '示例', '例子',
+  '怎么写', '如何实现', '具体', '步骤', '过程', '为什么', '原因',
+  '练习', '题目', '测验', '批改', '作业', '答案', '解析',
+  '教学', '学习', '教程', '入门', '零基础', '新手',
+  '错误', 'bug', '问题', '报错', '异常', '调试',
+  '面试', '笔试', '考题', '考点',
+  '区别', '对比', 'vs', 'VS',
+];
+
+function shouldUseAi(question: string): boolean {
+  const q = question.toLowerCase();
+  for (const kw of AI_ENHANCED_KEYWORDS) {
+    if (q.includes(kw.toLowerCase())) return true;
+  }
+  if (question.length > 30) return true;
+  return false;
+}
+
+export async function generateResponseSmart(
+  question: string,
+  context: UserContext,
+  aiConfig: AiProviderConfig,
+): Promise<ChatMessage> {
+  const aiAvailable = aiConfig.enabled && aiConfig.provider !== 'builtin';
+  const needsAi = shouldUseAi(question);
+
+  if (aiAvailable && needsAi) {
+    try {
+      const skillInfo = context.skills.map(s => `${s.name}(Lv.${s.level})`).join('、');
+      const systemPrompt = `你是一位专业的编程学习导师，擅长用通俗易懂的方式讲解技术知识。
+
+用户当前技能：${skillInfo || '还没有学习任何技能'}
+用户学习时长：${Math.floor(context.stats.totalStudyTime / 60)} 分钟
+已完成任务：${context.stats.completedTasks} 个
+
+请根据用户的水平给出合适的回答：
+- 如果用户是初学者，用更简单的语言，多举例子
+- 如果用户有一定基础，可以深入一些
+- 回答要清晰、有结构，必要时给出代码示例
+- 用中文回答，语气亲切自然`;
+
+      const aiResponse = await generateWithAi(question, aiConfig, systemPrompt);
+      return {
+        role: 'assistant',
+        content: aiResponse,
+        timestamp: Date.now(),
+      };
+    } catch (err) {
+      const fallback = generateResponse(question, context);
+      fallback.content = `（AI 调用失败，使用本地回答）\n\n${fallback.content}`;
+      return fallback;
+    }
+  }
+
+  return generateResponse(question, context);
 }

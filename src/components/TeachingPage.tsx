@@ -16,7 +16,7 @@ import {
   Target,
 } from 'lucide-react';
 import { useStore } from '../store';
-import { generateResponse, type ChatMessage } from '../utils/aiChatEngine';
+import { generateResponseSmart, type ChatMessage } from '../utils/aiChatEngine';
 import { SKILL_TREES, type SkillTreeNode } from '../data/skillTrees';
 import { SKILLS_WITH_META } from '../data/skillsAndCareers';
 
@@ -31,7 +31,7 @@ interface TeachingMessage {
 }
 
 export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
-  const { skills, plans, stats } = useStore();
+  const { skills, plans, stats, aiConfig } = useStore();
   const [selectedSkill, setSelectedSkill] = useState<string>('');
   const [selectedNode, setSelectedNode] = useState<SkillTreeNode | null>(null);
   const [messages, setMessages] = useState<TeachingMessage[]>([]);
@@ -81,7 +81,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
     setLearningPath(path);
   };
 
-  const handleSelectNode = (node: SkillTreeNode) => {
+  const handleSelectNode = async (node: SkillTreeNode) => {
     setSelectedNode(node);
     setMessages([]);
     setShowQuiz(false);
@@ -96,7 +96,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 4. 最后提一个问题来检验学生的理解
 
 请用中文回答，不要太学术化，像面对面讲解一样。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setMessages([
       { role: 'system', content: `正在学习：${node.name}`, timestamp: Date.now() },
       { role: 'assistant', content: res.content, timestamp: res.timestamp },
@@ -104,7 +104,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
     const userMsg: TeachingMessage = { role: 'user', content: inputValue.trim(), timestamp: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
@@ -116,12 +116,12 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 学生的问题：${inputValue}
 
 请用清晰易懂的方式回答，必要时可以给出代码示例。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setMessages((prev) => [...prev, { role: 'assistant', content: res.content, timestamp: res.timestamp }]);
     setIsLoading(false);
   };
 
-  const handleStartLearning = () => {
+  const handleStartLearning = async () => {
     if (learningPath.length === 0) return;
     setCurrentStep(0);
     setMessages([]);
@@ -138,7 +138,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 4. 保持内容简洁，适合初学者理解
 
 请用中文回答。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setMessages([
       { role: 'system', content: `学习进度：${firstTopic}（第 ${currentStep + 1}/${learningPath.length} 步）`, timestamp: Date.now() },
       { role: 'assistant', content: res.content, timestamp: res.timestamp },
@@ -146,7 +146,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep >= learningPath.length - 1) return;
     setCurrentStep((prev) => prev + 1);
     setMessages([]);
@@ -163,7 +163,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 4. 保持内容简洁，适合初学者理解
 
 请用中文回答。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setMessages([
       { role: 'system', content: `学习进度：${topic}（第 ${currentStep + 2}/${learningPath.length} 步）`, timestamp: Date.now() },
       { role: 'assistant', content: res.content, timestamp: res.timestamp },
@@ -171,7 +171,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
-  const handlePrevStep = () => {
+  const handlePrevStep = async () => {
     if (currentStep <= 0) return;
     setCurrentStep((prev) => prev - 1);
     setMessages([]);
@@ -188,7 +188,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 4. 保持内容简洁，适合初学者理解
 
 请用中文回答。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setMessages([
       { role: 'system', content: `学习进度：${topic}（第 ${currentStep}/${learningPath.length} 步）`, timestamp: Date.now() },
       { role: 'assistant', content: res.content, timestamp: res.timestamp },
@@ -196,7 +196,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = async () => {
     setShowQuiz(true);
     setQuizAnswer('');
     setQuizResult(null);
@@ -211,12 +211,12 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 3. 给出参考答案和解析
 
 请先只输出题目，不要给答案。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     setQuizQuestion(res.content);
     setQuizLoading(false);
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     if (!quizAnswer.trim()) return;
     setQuizLoading(true);
     const skill = skills.find((s) => s.id === selectedSkill);
@@ -234,7 +234,7 @@ export const TeachingPage: React.FC<TeachingPageProps> = ({ onNavigate }) => {
 4. 根据答题情况给出下一步学习建议
 
 请用中文回答，格式清晰。`;
-    const res = generateResponse(prompt, userContext);
+    const res = await generateResponseSmart(prompt, userContext, aiConfig);
     const correct = res.content.includes('正确') || res.content.includes('对') || res.content.includes('正确答案');
     setQuizResult({ correct, feedback: res.content });
     setQuizLoading(false);
