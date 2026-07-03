@@ -20,6 +20,7 @@ const PROVIDER_INFO: Record<AiProvider, { label: string; desc: string; badge: st
 export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClose }) => {
   const { aiConfig, updateAiConfig } = useStore();
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
+  const [testError, setTestError] = useState<string>('');
   const [showTutorial, setShowTutorial] = useState(false);
   const [modelList, setModelList] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
@@ -40,9 +41,21 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
 
   const handleTest = async () => {
     setTestStatus('testing');
-    const ok = await testConnection(aiConfig);
-    setTestStatus(ok ? 'success' : 'fail');
-    setTimeout(() => setTestStatus('idle'), 3000);
+    setTestError('');
+    const result = await testConnection(aiConfig);
+    if (result.success) {
+      setTestStatus('success');
+      if (result.models && result.models.length > 0) {
+        setModelList(result.models);
+      }
+    } else {
+      setTestStatus('fail');
+      setTestError(result.error || '连接失败');
+    }
+    setTimeout(() => {
+      setTestStatus('idle');
+      setTestError('');
+    }, 5000);
   };
 
   const handleProviderChange = (provider: AiProvider) => {
@@ -156,6 +169,12 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                     {testStatus === 'success' && <CheckCircle size={16} className="status-icon success" />}
                     {testStatus === 'fail' && <AlertCircle size={16} className="status-icon fail" />}
                   </div>
+                  {testError && (
+                    <div className="error-message">
+                      <AlertCircle size={14} />
+                      <span>{testError}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -207,6 +226,12 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                     {testStatus === 'success' && <CheckCircle size={16} className="status-icon success" />}
                     {testStatus === 'fail' && <AlertCircle size={16} className="status-icon fail" />}
                   </div>
+                  {testError && (
+                    <div className="error-message">
+                      <AlertCircle size={14} />
+                      <span>{testError}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

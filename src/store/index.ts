@@ -95,6 +95,7 @@ type AppState = {
   };
   // 本地AI配置
   aiConfig: AiProviderConfig;
+  aiStatus: 'offline' | 'connecting' | 'online' | 'error';
   // 测验历史记录
   quizHistory: QuizResult[];
   // 保存的测验（可重复使用）
@@ -137,6 +138,7 @@ interface AppStore extends AppState {
   toggleWebSearch: () => void;
   // AI config actions
   updateAiConfig: (updates: Partial<AiProviderConfig>) => void;
+  updateAiStatus: (status: 'offline' | 'connecting' | 'online' | 'error') => void;
 
   // Data import/export
   exportData: () => string;
@@ -181,6 +183,7 @@ export const useStore = create<AppStore>()(
         webSearchEnabled: false,
       },
       aiConfig: { ...DEFAULT_AI_CONFIG },
+      aiStatus: 'offline',
       quizHistory: [],
       savedQuizzes: [],
 
@@ -566,6 +569,10 @@ export const useStore = create<AppStore>()(
         }));
       },
 
+      updateAiStatus: (status) => {
+        set((state) => ({ aiStatus: status }));
+      },
+
       addQuizResult: (result) => {
         set((state) => ({
           quizHistory: [result, ...state.quizHistory].slice(0, 100),
@@ -620,6 +627,7 @@ export const useStore = create<AppStore>()(
             masteredSkillNodes: data.masteredSkillNodes || {},
             apiSettings: data.apiSettings || { enabledSources: DEFAULT_ENABLED_SOURCES, webSearchEnabled: false },
             aiConfig: data.aiConfig || { ...DEFAULT_AI_CONFIG },
+            aiStatus: 'offline',
           });
           return true;
         } catch {
@@ -643,6 +651,7 @@ export const useStore = create<AppStore>()(
           masteredSkillNodes: {},
           apiSettings: { enabledSources: DEFAULT_ENABLED_SOURCES, webSearchEnabled: false },
           aiConfig: { ...DEFAULT_AI_CONFIG },
+          aiStatus: 'offline',
           quizHistory: [],
           savedQuizzes: [],
         });
