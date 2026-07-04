@@ -945,28 +945,19 @@ export const AIRecommend: React.FC<AIRecommendProps> = ({ onNewPlan }) => {
                           <p className="result-desc">{entry.description}</p>
                         </div>
                         <div className="result-side">
-                          <div className="match-score-ring" style={{ '--score': `${score}%`, '--score-color': score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444' } as React.CSSProperties}>
-                            <svg viewBox="0 0 36 36">
-                              <circle cx="18" cy="18" r="16" fill="none" stroke="#334155" strokeWidth="3" />
-                              <circle
-                                cx="18"
-                                cy="18"
-                                r="16"
-                                fill="none"
-                                stroke={score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}
-                                strokeWidth="3"
-                                strokeDasharray={`${(score / 100) * 100.53} 100.53`}
-                                strokeLinecap="round"
-                                transform="rotate(-90 18 18)"
-                                style={{ transition: 'stroke-dasharray 0.5s ease' }}
-                              />
-                            </svg>
-                            <span className="match-score-num">{score}</span>
-                            <span className="match-score-unit">%</span>
+                          <div className="match-score-badge" style={{ color: score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444', background: score >= 80 ? 'rgba(34, 197, 94, 0.12)' : score >= 60 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)' } as React.CSSProperties}>
+                            <span className="match-score-value">{score}</span>
+                            <span className="match-score-label">%匹配</span>
                           </div>
-                          <span className="result-expand-icon">
-                            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                          </span>
+                          <div className="match-score-bar">
+                            <div 
+                              className="match-score-fill"
+                              style={{ 
+                                width: `${score}%`,
+                                background: `linear-gradient(90deg, ${score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444'}, ${score >= 80 ? '#4ade80' : score >= 60 ? '#fbbf24' : '#f87171'})`
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
 

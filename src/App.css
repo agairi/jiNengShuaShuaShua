@@ -5786,43 +5786,44 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
-  min-width: 70px;
+  gap: 8px;
+  min-width: 90px;
   flex-shrink: 0;
   padding-top: 2px;
 }
 
-.match-score-ring {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.match-score-ring svg {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.match-score-num {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--score-color, #f59e0b);
-  line-height: 1;
-  z-index: 1;
-}
-
-.match-score-unit {
-  position: absolute;
-  top: 10px;
-  right: 2px;
-  font-size: 10px;
+.match-score-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
   font-weight: 600;
-  color: var(--score-color, #f59e0b);
+}
+
+.match-score-value {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.match-score-label {
+  font-size: 11px;
   opacity: 0.8;
+}
+
+.match-score-bar {
+  width: 100%;
+  height: 4px;
+  background: #334155;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.match-score-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
 }
 
 .result-expand-icon {
